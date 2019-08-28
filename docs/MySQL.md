@@ -1,8 +1,3 @@
----
-typora-copy-images-to: pics
-
----
-
 # MySQL
 
 ## 软件安装
