@@ -139,15 +139,15 @@ MySQL>prompt 提示符
 
 1GB=2^10^ MB=2^10^ * 2^10^ KB = 2^10^  * 2^10^  * 2^10^ byte =  2^10^  * 2^10^  * 2^10^  * 8 bit
 
-日期和时间类型
+### 日期和时间类型
 
-| 类型      | 大小 (字节) | 范围                                                  | 格式                | 用途                     |
-| :-------- | :---------- | :---------------------------------------------------- | :------------------ | :----------------------- |
-| DATE      | 3           | 1000-01-01 / 9999-12-31                               | YYYY-MM-DD          | 日期值                   |
-| TIME      | 3           | '-838:59:59' / '838:59:59'                            | HH:MM:SS            | 时间值或持续时间         |
-| YEAR      | 1           | 1901/2155                                             | YYYY                | 年份值                   |
-| DATETIME  | 8           | 1000-01-01 00:00:00 / 9999-12-31 23:59:59             | YYYY-MM-DD HH:MM:SS | 混合日期和时间值         |
-| TIMESTAMP | 4           | '1970-01-01 00:00:01' UTC / '2038-01-19 03:14:07' UTC | YYYYMMDD HHMMSS     | 混合日期和时间值，时间戳 |
+| 类型      | 大小 (字节) | 范围                                                         | 格式                        | 用途                     |
+| :-------- | :---------- | :----------------------------------------------------------- | :-------------------------- | :----------------------- |
+| DATE      | 3           | 1000 - 01 - 01 - 9999 - 12 - 31                              | YYYY - MM - DD              | 日期值                   |
+| TIME      | 3           | -838 : 59 : 59 - 838 : 59 : 59                               | HH : MM : SS                | 时间值或持续时间         |
+| YEAR      | 1           | 1901- 2155                                                   | YYYY                        | 年份值                   |
+| DATETIME  | 8           | 1000 - 01 - 01 00 : 00 : 00 - 9999 - 12 - 31 23 : 59 : 59    | YYYY - MM - DD HH : MM : SS | 混合日期和时间值         |
+| TIMESTAMP | 4           | 1970 - 01 - 01 00 : 00 : 01 UTC - 2038 - 01 - 19 03 : 14 : 07  UTC | YYYYMMDD HHMMSS             | 混合日期和时间值，时间戳 |
 
 ### 其他数据类型
 
@@ -220,9 +220,9 @@ INSERT [INTO] 表名 SELECT ...
 
 #### SELECT 关键字
 
-<div align="center"> <img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/_media/0.png?raw=true " width="200"/> </div><br>
+<div align="center"> <img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/0.png?raw=true" width="600"/> </div><br>
 
-<div align="center"> <img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/_media/1.png?raw=true " width="200"/> </div><br>
+<div align="center"> <img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/1.png?raw=true" width="600"/> </div><br>
 
 ### 更新数据
 
