@@ -1,2 +1,2 @@
-- [MySQL](https://dreamwhigh.github.io/Database-Notes/#/MySQL)
+[MySQL](https://dreamwhigh.github.io/Database-Notes/#/MySQL)
 
