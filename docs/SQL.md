@@ -2,7 +2,113 @@
 typora-copy-images-to: pics
 ---
 
-# SQL
+## 关系数据库
+
+### 主流关系数据库
+
+1. 商用数据库，例如：[Oracle](https://www.oracle.com/)，[SQL Server](https://www.microsoft.com/sql-server/)，[DB2](https://www.ibm.com/db2/)等；
+2. 开源数据库，例如：[MySQL](https://www.mysql.com/)，[PostgreSQL](https://www.postgresql.org/)等；
+3. 桌面数据库，以微软[Access](https://products.office.com/access)为代表，适合桌面应用程序使用；
+4. 嵌入式数据库，以[Sqlite](https://sqlite.org/)为代表，适合手机应用和桌面程序。
+
+### SQL
+
+SQL（Structured Query Language）是用来访问和操作数据库系统的语言。定义了三种操作数据库的能力：
+
+- **DDL：Data Definition Language**
+
+  DDL允许用户定义数据，也就是创建表、删除表、修改表结构这些操作。通常，DDL由数据库管理员执行。
+
+- **DML：Data Manipulation Language**
+
+  DML为用户提供添加、删除、更新数据的能力
+
+- **DQL：Data Query Language**
+
+  DQL允许用户查询数据
+
+**语法特点**
+
+SQL语言关键字不区分大小写，针对不同的数据库，对于表名和列名，有的数据库区分大小写，有的数据库不区分大小写。
+
+这里，SQL关键字总是大写，以示突出，表名和列名均使用小写。
+
+### 关系模型
+
+关系数据库是建立在关系模型上的。而关系模型本质上就是若干个存储数据的二维表，表和表之间需要建立“一对多”，“多对一”和“一对一”的关系，这样才能够按照应用程序的逻辑来组织和存储数据。
+
+表的每一**行**称为**记录**（Record），记录是一个逻辑意义上的数据。
+
+表的每一**列**称为**字段**（Column），同一个表的每一行记录都拥有相同的若干字段。
+
+### 主键、外键
+
+主键：能够唯一区分出不同的记录的字段，一般采用自增整数类型（INT NOT NULL AUTO_INCREMENT）的id字段作为主键
+
+联合主键：两个或更多的字段都设置为主键，尽量不使用，因为它给关系表带来了复杂度的上升。
+
+外键：可以把该表的数据与另一张表关联起来的列，通过定义外键约束实现，可以保证无法插入无效的数据，但会降低数据库的性能，一般不使用，对应的列仍然是一个普通的列，但是起到了外键的作用。
+
+### 索引
+
+索引是关系数据库中对某一列或多个列的值进行**预排序的数据结构**。通过使用索引，可以让数据库系统不必扫描整个表，而是直接定位到符合条件的记录，这样就大大加快了查询速度。
+
+```sql
+//创建索引，包含name和score两列
+ALTER TABLE students
+ADD INDEX idx_name_score (name, score);
+```
+
+**优点**：提高了查询效率
+
+**缺点**：插入、更新和删除记录时，需要同时修改索引
+
+#### 主键索引 
+
+PRIMARY KEY
+
+关系数据库会自动创建主键索引。使用主键索引的效率是最高的，因为主键会保证绝对唯一。
+
+```
+
+ALTER TABLE tbl_name ADD PRIMARY KEY (column_list)
+```
+
+
+
+#### 唯一索引
+
+UNIQUE INDEX
+
+具有唯一性约束的列
+
+```sql
+//添加唯一索引 UNIQUE INDEX
+ALTER TABLE tbl_name ADD UNIQUE index_name (column_list)
+
+//添加唯一约束而不创建索引
+ALTER TABLE students
+ADD CONSTRAINT uni_name UNIQUE (name);
+```
+
+#### 其他索引
+
+```
+CREATE INDEX indexName ON mytable(username(length)); 
+
+ALTER TABLE tbl_name ADD INDEX index_name (column_list)//普通索引，索引值可出现多次。
+
+ALTER TABLE tbl_name ADD FULLTEXT index_name (column_list)//指定索引为 FULLTEXT ，用于全文索引。
+```
+
+#### 其他命令
+
+```
+SHOW INDEX FROM table_name;//显示索引信息
+ ALTER TABLE testalter_tbl DROP INDEX c;//删除索引
+```
+
+
 
 ## 软件安装
 
@@ -15,7 +121,22 @@ MySQL8 安装教程参照：[MySQL8.0.15 安装教程 ](<https://www.jianshu.com
 
 ## 基础
 
-本机安装的 MySQL 服务名设置为 MySQL8
+本机安装的 MySQL 服务名设置为 MySQL8。
+
+安装的MySQL中包括两部分：
+
+- MySQL Server，可执行程序是mysqld，在后台运行
+- MySQL Client，命令行客户端，可执行程序是mysql
+
+在MySQL Client中输入的SQL语句通过**TCP连接**发送到MySQL Server。默认端口号是3306，即如果发送到本机MySQL Server，地址就是`127.0.0.1:3306`。
+
+也可以只安装MySQL Client，然后连接到远程MySQL Server。假设远程MySQL Server的IP地址是`10.0.1.99`，那么就使用`-h`指定IP或域名：
+
+```
+mysql -h 10.0.1.99 -u root -p
+```
+
+
 
 ### 语句规范
 
@@ -50,10 +171,12 @@ MySQL -h 主机名 -u 用户名 -p
 退出，3 种命令
 
 ```
-MySQL>exit;
+MySQL>exit;//仅断开了客户端和服务器的连接，MySQL服务器仍然继续运行
 MySQL>quit;
 MySQL>\q;
 ```
+
+
 
 ### MySQL 提示符
 
@@ -80,27 +203,7 @@ shell>MySQL -uroot -proot--prompt 提示符
 MySQL>prompt 提示符
 ```
 
-## 数据库操作
 
-### 创建数据库
-
-`CREATE DATABASE IF NOT EXISTS db_name CHARACTER SET = charset_name;` 创建数据库 db_name，并设定编码方式为 charset_name；
-
-`SHOW DATABASES;` 查看当前存在的所有数据库；
-
-`SHOW CREATE DATABASE db_name;` 查看数据库 db_name 的编码方式；
-
-`ALTER DATABASE db_name CHARACTER SET = utf8;` 修改数据库 db_name 的编码方式为 utf-8；
-
-`SHOW WARNINGS;` 查看警告具体内容；
-
-### 删除数据库
-
-`DROP DATABASE IF EXISTS db_name;` 
-
-### 选择数据库
-
-`USE db_name;`
 
 ## 数据类型
 
@@ -152,9 +255,52 @@ MySQL>prompt 提示符
 
 BINARY、VARBINARY、ENUM、SET、Geometry、Point、MultiPoint、LineString、MultiLineString、Polygon、GeometryCollection 等
 
+## 关键字，表达式
+
+| <>              | 不相等                                                       |
+| --------------- | ------------------------------------------------------------ |
+|                 |                                                              |
+| IN              | WHERE column_name IN (value1,value2,...) 表示该列取值为括号内的任一值 |
+| TOP             | 规定要返回的记录的数目                                       |
+| LIKE            | 在 WHERE 子句中搜索列中的指定模式                            |
+| %               | 替代任意字符串，包括空                                       |
+| _               | 替代一个字符                                                 |
+| [ABC]           | 字符列中的任何单一字符                                       |
+| [!ABC]或[\^ABC] | 不在字符列中的任何单一字符                                   |
+|                 |                                                              |
+|                 |                                                              |
+|                 |                                                              |
+|                 |                                                              |
+|                 |                                                              |
+|                 |                                                              |
+
+
+
+## 数据库操作
+
+### 创建数据库
+
+`CREATE DATABASE IF NOT EXISTS db_name CHARACTER SET = charset_name;` 创建数据库 db_name，并设定编码方式为 charset_name；
+
+`SHOW DATABASES;` 查看当前存在的所有数据库；
+
+`SHOW CREATE DATABASE db_name;` 查看数据库 db_name 的编码方式；
+
+`ALTER DATABASE db_name CHARACTER SET = utf8;` 修改数据库 db_name 的编码方式为 utf-8；
+
+`SHOW WARNINGS;` 查看警告具体内容；
+
+### 删除数据库
+
+`DROP DATABASE IF EXISTS db_name;` 
+
+### 选择数据库
+
+`USE db_name;`
+
 ## 数据库表操作
 
-### 创建数据库表
+### 创建表
 
 `create table;`  表名称 (列声明);
 
@@ -189,7 +335,7 @@ BINARY、VARBINARY、ENUM、SET、Geometry、Point、MultiPoint、LineString、M
 	);
 ```
 
-### 插入数据
+### 插入
 
 `insert [into] 表名 values (值 1, 值 2, 值 3, ...);` 插入一条记录
 
@@ -199,31 +345,7 @@ INSERT [INTO] 表名 SET 列名=...
 
 INSERT [INTO] 表名 SELECT ...
 
-### 查询数据
-
-`select 列名称 from 表名称 [查询条件 ];` 根据一定查询规则到数据库中获取数据；
-
-使用通配符 * 可查询表中所有的内容, 例如：
-
-`select * from students;`
-
-#### WHERE 关键词
-
-`select 列名称 from 表名称 where 条件;` 指定查询条件；
-
-`where` 后面可以接一般的比较运算符（ =、>、<、>=、<、!= ），扩展运算符（[not] null、in、like ），组合查询（or、and ）等条件查询方式。
-
-例如：
-
-`select * from students where sex="女";` 
-
-#### SELECT 关键字
-
-<div align="center"> <img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/0.png?raw=true" width="600"/> </div><br>
-
-<div align="center"> <img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/1.png?raw=true" width="600"/> </div><br>
-
-### 更新数据
+### 更新
 
 `update 表名称 set 列名称=新值 where 更新条件;` update 语句用来修改表中的数据。
 
@@ -235,13 +357,13 @@ update students set age=age+1;
 update students set name="张伟鹏", age=19 where tel="13288097888";
 ```
 
-### 删除数据
+### 删除
 
 `delete from 表名称 where 删除条件;`
 
 
 
-### 修改操作
+### 修改
 
 #### 修改数据库表的结构
 
@@ -323,7 +445,109 @@ RENAME TABLE tbl_name TO new_tbl_name [,tbl_name2 TO new_tbl_name2]…
 
 ```
 
+### 查询
 
+`select 列名称 from 表名称 [查询条件 ];` 根据一定查询规则到数据库中获取数据；
+
+#### 投影查询
+
+只返回指定列的数据，而不是所有列的数据，也可以给每一列取别名
+
+```
+SELECT 列1 别名1, 列2 别名2, 列3 别名3 FROM
+```
+
+#### 排序
+
+`ORDER BY` 用于排序，位于 `WHERE `子句后面。
+
+- ASC，升序，默认的排序规则
+- DESC，降序
+
+```sql
+SELECT id, name, gender, score FROM students ORDER BY score DESC, gender;
+```
+
+#### 分页查询
+
+结果集数据量很大时，采取分页显示。
+
+当前页面号`pageIndex`，每页显示的结果数量`pageSize`，当前页的索引`pageIndex`（从1开始），确定`LIMIT`和`OFFSET`应该设定的值：
+
+- `LIMIT`总是设定为`pageSize`；
+- `OFFSET`计算公式为`pageSize × (pageIndex - 1)`。
+
+#### 聚合查询
+
+| 聚合函数 | 说明                                   |
+| -------- | -------------------------------------- |
+| COUNT(*) | 查询所有列的行数                       |
+| SUM      | 计算某一列的合计值，该列必须为数值类型 |
+| AVG      | 计算某一列的平均值，该列必须为数值类型 |
+| MAX      | 计算某一列的最大值                     |
+| MIN      | 计算某一列的最小值                     |
+
+`GROUP BY`子句可以实现分组聚合
+
+```sql
+//统计各班的男生和女生人数
+SELECT class_id, gender, COUNT(*) num FROM students GROUP BY class_id, gender;
+```
+
+#### 多表查询
+
+SELECT查询从多张表同时查询数据，`SELECT * FROM <表1> <表2>`。
+
+```sql
+SELECT
+    s.id sid,
+    s.name,
+    c.id cid,
+FROM students s, classes c//取别名
+WHERE s.gender = 'M' AND c.id = 1;//表名.列名
+```
+
+#### 连接查询
+
+
+
+|          | 关键字           | 描述                       |
+| -------- | ---------------- | -------------------------- |
+| 内连接   | INNER JOIN       | 等值连接，只保留有关联的行 |
+| 自连接   | INNER JOIN       | 自己连接自己               |
+| 自然连接 | MATURAL JOIN     | 所有同名列的等值连接       |
+| 左外连接 | LEFT OUTER JOIN  | 保留左表没有关联的行       |
+| 右外连接 | RIGHT OUTER JOIN | 保留右表没有关联的行       |
+| 外连接   | OUTER JOIN       | 保留所有没有关联的行       |
+
+语法：`SELECT ... FROM <表1> INNER JOIN <表2> ON <条件...>`
+
+#### WHERE 关键词
+
+`select 列名称 from 表名称 where 条件;` 指定查询条件；
+
+`where` 后面可以接一般的比较运算符（ =、>、<、>=、<、!= ），扩展运算符（[not] null、in、like ），组合查询（or、and ）等条件查询方式。
+
+例如：
+
+`select * from students where sex="女";` 
+
+#### SELECT 关键字
+
+`SELECT`可以用作计算，不带`FROM`子句的`SELECT`语句有一个有用的用途，就是用来判断当前到数据库的连接是否有效。许多检测工具会执行一条`SELECT 1;`来测试数据库连接。
+
+```sql
+SELECT 100+200;//用于计算，300
+SELECT 1;//用于测试数据库连接
+```
+
+
+
+<div align="center"> <img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/0.png?raw=true" width="600"/> </div><br>
+
+<div align="center"> <img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/1.png?raw=true" width="600"/> </div><br>
+
+### 
 
 ## 约束
 
@@ -428,25 +652,13 @@ NO ACTION：标准 SQL 的关键字，在 MySQL 中于 RESTRICT 相同
 - **ALL**：对于子查询返回的列中的所有值，如果比较结果都为 TRUE，才返回 TRUE”
 - **EXISTS** ：判断子查询的结果集是否为空，若子查询的结果集不为空，则返回 TRUE；否则返回 FALSE。
 
-## 连接
+## 范式
 
-### 内连接
-
-INNER JOIN
-
-#### 自连接
-
-
-
-### 外连接
-
-#### 左外连接
-
-LEFT OUTER JOIN
-
-#### 右外连接
-
-RIGHT OUTER JOIN
+|      | 描述                             |
+| ---- | -------------------------------- |
+| 1NF  | 属性不可分                       |
+| 2NF  | 每个非主属性完全依赖于键码       |
+| 3NF  | 每个非主属性不传递函数依赖于键码 |
 
 ## 函数
 
@@ -678,7 +890,7 @@ SELECT a INTO b;#赋值 b=a
 
 [慕课网-与 MySQL 的零距离接触 ](<https://www.imooc.com/learn/122>)
 
-
+[廖雪峰的官方网站-SQL](<https://www.liaoxuefeng.com/wiki/1177760294764384/1179613436834240>)
 
 ## 待整理
 
