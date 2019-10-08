@@ -318,11 +318,15 @@ MyISAM中索引检索的算法为首先按照B+Tree搜索算法搜索索引，�
 
 在InnoDB 存储引擎中，当某个索引值被使用的非常频繁时，会在 B+Tree 索引之上再创建一个哈希索引，这样就让 B+Tree 索引具有哈希索引的一些优点，比如快速的哈希查找。
 
-### 全文索引
+#### 全文索引
 
 MyISAM 存储引擎支持全文索引，用于查找文本（只能在类型为CHAR、VARCHAR或者TEXT的字段上创建全文索引）中的关键词，而不是直接比较是否相等。
 
 查找条件使用 MATCH AGAINST，而不是普通的 WHERE。
+
+```mysql
+SELECT * FROM article WHERE MATCH(col1,col2) AGAINST('查询字符串')
+```
 
 全文索引使用倒排索引实现，它记录着关键词到其所在文档的映射。
 
@@ -371,6 +375,10 @@ ALTER TABLE people ADD INDEX height_name_age (height,name,age);
 
 **索引的选择性**：不重复的索引值和记录总数的比值。最大值为 1，此时每个记录都有唯一的索引与其对应。选择性越高，每个记录的区分度越高，查询效率也越高。
 
+```mysql
+SELECT COUNT(DISTINCT col1)/COUNT(*) AS col1_selectivity FROM table1;
+```
+
 ### 前缀索引
 
 对于 BLOB、TEXT 和 VARCHAR 类型的列，必须使用前缀索引，只索引开始的部分字符。
@@ -380,6 +388,10 @@ ALTER TABLE people ADD INDEX height_name_age (height,name,age);
 ### 覆盖索引
 
 索引包含所有需要查询的字段的值。
+
+覆盖索引必须**要存储索引的列**，而哈希索引、空间索引和全文索引等都不存储索引列的值，所以MySQL只能使用B-Tree索引做覆盖索引。
+
+当发起一个被索引覆盖的查询(也叫作索引覆盖查询)时，在EXPLAIN的Extra列可以看到**“Using index”**的信息
 
 具有以下优点：
 
@@ -402,15 +414,95 @@ ALTER TABLE people ADD INDEX height_name_age (height,name,age);
 
 ### 使用 Explain 进行分析
 
+[explain 详解](<https://www.cnblogs.com/gomysql/p/3720123.html>)
+
 SELECT 查询语句，开发人员可以通过分析 Explain 结果来优化查询语句。
 
-比较重要的字段有：
+返回字段的解释：
 
-- select_type : 查询类型，有简单查询、联合查询、子查询等
+- id: 查询的序列号，表示查询中执行select子句或操作表的顺序，id相同，视为同一组，从上向下顺序执行；id值越大，优先级越高，越先执行
 
-- key : 使用的索引
+- select_type: 查询的类型，主要是区别普通查询和联合查询、子查询之类的复杂查询
 
-- rows : 扫描的行数
+  - SIMPLE：查询中不包含子查询或者UNION
+  - 查询中若包含任何复杂的子部分，最外层查询则被标记为：PRIMARY
+  - 在SELECT或WHERE列表中包含了子查询，该子查询被标记为：SUBQUERY
+
+- table: 输出的行所引用的表
+
+- type: 访问类型
+
+  - ALL: 扫描全表
+  - index: 扫描全部索引树
+  - range: 扫描部分索引，索引范围扫描，对索引的扫描开始于某一点，返回匹配值域的行，常见于between、<、>等的查询
+  - ref: 使用非唯一索引或非唯一索引前缀进行的查找
+  - （eq_ref和const的区别：）
+  - eq_ref：唯一性索引扫描，对于每个索引键，表中只有一条记录与之匹配。常见于主键或唯一索引扫描
+  - const, system: 单表中最多有一个匹配行，查询起来非常迅速，例如根据主键或唯一索引查询。system是const类型的特例，当查询- 的表只有一行的情况下， 使用system。
+  - NULL: 不用访问表或者索引，直接就能得到结果，如select 1 from test where 1
+
+- key: 显示MySQL实际决定使用的索引。如果没有索引被选择，是NULL
+
+- key_len: 使用到索引字段的长度
+  注：key_len显示的值为索引字段的最大可能长度，并非实际使用长度，即key_len是根据表定义计算而得，不是通过表内检索出的。
+
+- ref: 显示哪个字段或常数与key一起被使用
+
+- rows: 这个数表示mysql要遍历多少数据才能找到，表示MySQL根据表统计信息及索引选用情况，估算的找到所需的记录所需要读取的行数，在innodb上可能是不准确的
+
+- Extra: 执行情况的说明和描述。
+
+  [执行计划 Extra](<https://www.cnblogs.com/wy123/p/7366486.html>)
+
+  - using index ：使用覆盖索引的时候就会出现
+  - using where：
+  - using index condition：
+  - using index & using where：
+  - Using temporary
+    表示MySQL需要使用临时表来存储结果集，常见于排序和分组查询
+
+### 最左匹配原则
+
+[最左匹配原则](<https://blog.csdn.net/u013164931/article/details/82386555>)
+
+```mysql
+create table test(
+a int ,
+b int,
+c int,
+d int,
+key index_abc(a,b,c)
+)engine=InnoDB default charset=utf8;
+```
+
+对于联合索引 `index_abc(a,b,c)`，在查询中能够用到的索引是
+
+- a
+- a, b
+- a, b, c
+
+```mysql
+explain select * from test where a<10 ;
+explain select * from test where a<10 and b <10;
+explain select * from test where a<10 and b <10 and c<10;
+```
+
+如果a, b, c 出现的顺序调换一下
+
+```mysql
+explain select * from test where b<10 and a <10;
+explain select * from test where b<10 and a <10 and c<10;
+```
+
+mysql查询优化器会判断纠正这条sql语句该以什么样的顺序执行效率最高，最后才生成真正的执行计划。
+
+```mysql
+explain select * from test where b<10 and c <10;
+explain select * from test where a<10 and c <10;
+```
+
+当b+树的数据项是复合的数据结构，比如(name,age,sex)的时候，b+树是按照从左到右的顺序来建立搜索树的，比如当(张三,20,F)这样的数据来检索的时候，b+树会优先比较name来确定下一步的所搜方向，如果name相同再依次比较age和sex，最后得到检索的数据；但当(20,F)这样的没有name的数据来的时候，b+树就不知道下一步该查哪个节点，因为建立搜索树的时候name就是第一个比较因子，必须要先根据name来搜索才能知道下一步去哪里查询。比如当(张三,F)这样的数据来检索时，b+树可以用name来指定搜索方向，但下一个字段age的缺失，所以只能把名字等于张三的数据都找到，然后再匹配性别是F的数据了， 这个是非常重要的性质，即索引的最左匹配特性。
+
 
 ### 优化数据访问
 
@@ -484,21 +576,52 @@ SELECT 查询语句，开发人员可以通过分析 Explain 结果来优化查�
 | 特性       |                                  | 压缩表和空间数据索引 |
 | 使用场景   |                                  | 读写分离的读表       |
 
+### 四种 MySQL存储引擎
+
+| **功 能**    | **MYISAM** | **Memory** | **InnoDB** | **Archive** |
+| ------------ | ---------- | ---------- | ---------- | ----------- |
+| 存储限制     | 256TB      | RAM        | 64TB       | None        |
+| 支持事物     | No         | No         | Yes        | No          |
+| 支持全文索引 | Yes        | No         | No         | No          |
+| 支持数索引   | Yes        | Yes        | Yes        | No          |
+| 支持哈希索引 | No         | Yes        | No         | No          |
+| 支持数据缓存 | No         | N/A        | Yes        | No          |
+| 支持外键     | No         | No         | Yes        | No          |
+
 ## 数据类型
 
-### 整型
+## 数据类型
+
+[MySQL 数据类型 ](<https://www.runoob.com/MySQL/MySQL-data-types.HTML>)
+
+### 数值类型
+
+**整型**
 
 TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT 分别使用 8, 16, 24, 32, 64 位存储空间，一般情况下越小的列越好。
 
 INT(11) 中的数字只是规定了交互工具显示字符的个数，对于存储和计算来说是没有意义的。
 
-### 浮点型
+**浮点型**
 
 FLOAT 和 DOUBLE 为浮点类型，DECIMAL 为高精度小数类型。CPU 原生支持浮点运算，但是不支持 DECIMAl 类型的计算，因此 DECIMAL 的计算比浮点类型需要更高的代价。
 
 FLOAT、DOUBLE 和 DECIMAL 都可以指定列宽，例如 DECIMAL(18, 9) 表示总共 18 位，取 9 位存储小数部分，剩下 9 位存储整数部分。
 
-### 字符串
+| 类型           | 大小                                          | 范围（有符号）                                               | 范围（无符号）                                               |
+| :------------- | :-------------------------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+| TINYINT        | 1 字节                                        | (-2^7^，2^7^ - 1                                             | (0，2^8^ - 1)                                                |
+| SMALLINT       | 2 字节                                        | (-2^15^，2^15^ - 1)                                          | (0，2^16^ - 1)                                               |
+| MEDIUMINT      | 3 字节                                        | (-2^23^，2^23^ - 1)                                          | (0，2^24^ - 1)                                               |
+| INT 或 INTEGER | 4 字节                                        | (-2^31^，2^31^ - 1)                                          | (0，2^32^ - 1)                                               |
+| BIGINT         | 8 字节                                        | (-2^63^，2^63^ - 1)                                          | (0，2^64^ - 1)                                               |
+| FLOAT[(M, D)]  | 4 字节                                        | (-3.402 823 466 E+38，-1.175 494 351 E-38)，0，(1.175 494 351 E-38，3.402 823 466 351 E+38) | 0，(1.175 494 351 E-38，3.402 823 466 E+38)                  |
+| DOUBLE[(M, D)] | 8 字节                                        | (-1.797 693 134 862 315 7 E+308，-2.225 073 858 507 201 4 E-308)，0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308) | 0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308) |
+| DECIMAL        | 对 DECIMAL(M,D) ，如果 M>D，为 M+2 否则为 D+2 | 依赖于 M 和 D 的值                                           | 依赖于 M 和 D 的值                                           |
+
+其中 M 指数字总位数，D 指小数点后的位数
+
+### 字符串类型
 
 主要有 CHAR 和 VARCHAR 两种类型，一种是定长的，一种是变长的。
 
@@ -506,17 +629,64 @@ VARCHAR 这种变长类型能够节省空间，因为只需要存储必要的内
 
 在进行存储和检索时，会保留 VARCHAR 末尾的空格，而会删除 CHAR 末尾的空格。
 
-### 时间和日期
+| 类型       | 大小               | 用途                            |
+| :--------- | :----------------- | :------------------------------ |
+| CHAR       | 0 - 2^8^ -1 字节   | 定长字符串                      |
+| VARCHAR    | 0 - 2^16^ -1 字节  | 变长字符串                      |
+| TINYBLOB   | 0 - 2^8^ - 1 字节  | 不超过 255 个字符的二进制字符串 |
+| TINYTEXT   | 0 - 2^8^ - 1 字节  | 短文本字符串                    |
+| BLOB       | 0 - 2^16^ - 1 字节 | 二进制形式的长文本数据          |
+| TEXT       | 0 - 2^16^ - 1 字节 | 长文本数据（65 K）              |
+| MEDIUMBLOB | 0 - 2^24^ - 1 字节 | 二进制形式的中等长度文本数据    |
+| MEDIUMTEXT | 0 - 2^24^ - 1 字节 | 中等长度文本数据                |
+| LONGBLOB   | 0 - 2^32^ - 1 字节 | 二进制形式的极大文本数据        |
+| LONGTEXT   | 0 - 2^32^ - 1 字节 | 极大文本数据                    |
+
+1GB=2^10^ MB=2^10^ * 2^10^ KB = 2^10^  * 2^10^  * 2^10^ byte =  2^10^  * 2^10^  * 2^10^  * 8 bit
+
+### 日期和时间类型
+
+### 
 
 |           |        |            |                        |
 | --------- | ------ | ---------- | ---------------------- |
 | DATATIME  | 8 字节 | 与时区无关 |                        |
 | TIMESTAMP | 4 字节 | 时区相关   | 首选，因为空间效率更高 |
 
-### 切分
+| 类型      | 大小 (字节) | 范围                                                         | 格式                        | 用途                     |
+| :-------- | :---------- | :----------------------------------------------------------- | :-------------------------- | :----------------------- |
+| DATE      | 3           | 1000 - 01 - 01 - 9999 - 12 - 31                              | YYYY - MM - DD              | 日期值                   |
+| TIME      | 3           | -838 : 59 : 59 - 838 : 59 : 59                               | HH : MM : SS                | 时间值或持续时间         |
+| YEAR      | 1           | 1901- 2155                                                   | YYYY                        | 年份值                   |
+| DATETIME  | 8           | 1000 - 01 - 01 00 : 00 : 00 - 9999 - 12 - 31 23 : 59 : 59    | YYYY - MM - DD HH : MM : SS | 混合日期和时间值         |
+| TIMESTAMP | 4           | 1970 - 01 - 01 00 : 00 : 01 UTC - 2038 - 01 - 19 03 : 14 : 07  UTC | YYYYMMDD HHMMSS             | 混合日期和时间值，时间戳 |
+
+### 其他数据类型
+
+BINARY、VARBINARY、ENUM、SET、Geometry、Point、MultiPoint、LineString、MultiLineString、Polygon、GeometryCollection 等
 
 
 
-### 复制
+## 切分
+
+
+
+
+
+## 主从复制
 
 主要涉及三个线程（**binlog线程、I/O线程、SQL线程**），目的是实现**读写分离**
+
+mysql主从复制用途
+
+- 实时灾备，用于故障切换
+- 读写分离，提供查询服务
+- 备份，避免影响业务
+
+ 
+
+主从部署必要条件：
+
+- 主库开启binlog日志（设置log-bin参数）
+- 主从server-id不同
+- 从库服务器能连通主库
