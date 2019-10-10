@@ -86,7 +86,9 @@ typora-copy-images-to: pics
 
 对于一个树高为4的二叉树，查找值10位于叶子节点上，那么磁盘IO的次数是4，即**磁盘IO的次数由树的高度来决定。**
 
-![img](E:\GitHub\Database-Notes\docs\pics\20161201164339243.jpg)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/20161201164339243.jpg?raw=true" /></div><br>
+
+
 
 **减少磁盘IO的次数就必须要压缩树的高度，让瘦高的树尽量变成矮胖的树，所以诞生了B-Tree。**
 
@@ -110,7 +112,7 @@ B-树的搜索，从根结点开始，对结点内的关键字（有序）序列
 
 **由于树的高度减小，且同一个结点内的关键字比对是在内存中完成中，不涉及到磁盘IO，所以B-Tree的磁盘IO次数更少，性能更好。**
 
-![img](E:\GitHub\Database-Notes\docs\pics\20161201164718353.jpg)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/20161201164718353.jpg?raw=true" /></div><br>
 
 #### B+ Tree
 
@@ -127,7 +129,9 @@ B-树的搜索，从根结点开始，对结点内的关键字（有序）序列
 1. 非叶子节点只存储键值信息，只有叶子节点含有键值信息和指向真实记录的指针；B-Tree中中间结点和叶子节点都含有指向真实记录的指针
 2. 所有叶子节点之间都有一个链指针。
 3. 数据记录都存放在叶子节点中，即所有关键字都在叶子结点出现（非叶子结点和叶子结点的字段值会重复，而B-Tree 不会重复）
-4. 不可能在非叶子结点命中；B-Tree也可能在非叶子结点命中![img](E:\GitHub\Database-Notes\docs\pics\20161201164907855.jpg)
+4. 不可能在非叶子结点命中；B-Tree也可能在非叶子结点命中
+
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/20161201164907855.jpg?raw=true" /></div><br>
 
 ##### B+树的优势：
 
@@ -171,7 +175,7 @@ B-树的搜索，从根结点开始，对结点内的关键字（有序）序列
 
 下图为聚簇索引的数据分布，节点页只包含了索引列，叶子页包含行的全部数据，其中索引列包含的是整数值。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-b88c14d5b159a60b.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-b88c14d5b159a60b.webp?raw=true" /></div><br>
 
 下图为InnoDB（支持聚簇索引）的数据分布，每一个叶子节点都包含了主键值、事务ID、用于事务和MVCC的回流指针以及所有的剩余列（在这个例子中是col2)。如果主键是一个列前缀索引，InnoDB也会包含完整的主键列和剩下的其他列。叶节点包含了完整的数据记录，这种索引即为**聚簇索引**。
 
@@ -186,11 +190,11 @@ CREATE TABLE layout_test(
 );
 ```
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-23648691d81134a4.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-23648691d81134a4.webp?raw=true" /></div><br>
 
 InnoDB主键索引的分布，按照B+Tree搜索算法搜索索引，如果指定的Key存在，其对应的data 域（叶子节点）包含完整的数据记录。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-c059c85eaf693801.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-c059c85eaf693801.webp?raw=true" /></div><br>
 
 #### 非聚簇索引
 
@@ -198,21 +202,19 @@ InnoDB主键索引的分布，按照B+Tree搜索算法搜索索引，如果指�
 
 MyISAM的B+Tree的叶子节点上的data，并不是数据本身，而是数据存放的地址。MyISAM按照数据插入的顺序存储在磁盘上，左边为行号(row number)，从0开始。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-de55e5b8e4721453.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-de55e5b8e4721453.webp?raw=true" /></div><br>
 
 MyISAM不支持聚簇索引，建立的primary key的索引结构图中**每一个叶子节点仅仅包含行号(row number)，且叶子节点按照col1的顺序存储**。MyISAM是按列值与行号来组织索引的。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-c870bce84eef8f08.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-c870bce84eef8f08.webp?raw=true" /></div><br>
 
 同样的，col2 的索引结构图中**每一个叶子节点仅仅包含行号(row number)，且叶子节点按照col2的顺序存储**。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-3235799d9bff720e.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-3235799d9bff720e.webp?raw=true" /></div><br>
 
 MyISAM中索引检索的算法为首先按照B+Tree搜索算法搜索索引，如果指定的Key存在，则取出其data域的值，然后以data域的值为地址，读取相应数据记录。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-fd1159ba20285a23.webp)
-
-
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-fd1159ba20285a23.webp?raw=true" /></div><br>
 
 #### 二级索引
 
@@ -222,7 +224,7 @@ MyISAM中索引检索的算法为首先按照B+Tree搜索算法搜索索引，�
 
 非聚簇索引（MyISAM）的二级索引叶子节点存放的还是列值与行号的组合，叶子节点中保存的是**数据的物理地址**。所以可以看出MYISAM的主键索引和二级索引没有任何区别，主键索引仅仅只是一个叫做PRIMARY的唯一、非空的索引，且MYISAM引擎中可以不设主键。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-11cabdfdce46f976.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-11cabdfdce46f976.webp?raw=true" /></div><br>
 
 聚簇索引：
 
@@ -238,9 +240,9 @@ MyISAM中索引检索的算法为首先按照B+Tree搜索算法搜索索引，�
 
 主键索引B+树的节点存储了主键，辅助键索引B+树存储了辅助键。表数据存储在独立的地方，这两颗B+树的叶子节点都使用一个地址指向真正的表数据，对于表数据来说，这两个键没有任何差别。由于**索引树是独立的，通过辅助键检索无需访问主键的索引树**。
 
-![img](E:\GitHub\Database-Notes\docs\pics\10154499-5244179cc19a1c21.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/10154499-5244179cc19a1c21.webp?raw=true" /></div><br>
 
-![img](E:\GitHub\Database-Notes\docs\pics\10154499-5772dddedb909374.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/10154499-5772dddedb909374.webp?raw=true" /></div><br>
 
 #### 按主键顺序插入行
 
@@ -248,11 +250,11 @@ MyISAM中索引检索的算法为首先按照B+Tree搜索算法搜索索引，�
 
 对于顺序的主键值，InnoDB 把每一条记录都存储在上一条记录的后面，达到页的最大填充因子时（InnoDB 默认最大填充因子为页的 15/16），下一条记录会写入新页。索引结构相对紧凑，磁盘碎片少，效率也高。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-341cb567b964f649.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-341cb567b964f649.webp?raw=true" /></div><br>
 
 如果写入主键值是无序的，通常要在已有数据之间寻找合适的位置，并分配空间，不得不频繁地做页分裂操作，以便为新的行分配空间，页分裂会导致移动大量数据，一次插入至少需要修改三个页面。而频繁的页分裂又会导致也变得稀疏，被不规则填充，最终数据会有碎片。
 
-![img](E:\GitHub\Database-Notes\docs\pics\3190591-429aa829eb39b79c.webp)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/3190591-429aa829eb39b79c.webp?raw=true" /></div><br>
 
 #### 聚簇索引的优势
 
@@ -298,7 +300,7 @@ MyISAM中索引检索的算法为首先按照B+Tree搜索算法搜索索引，�
 
 对于hash相同的，采用链表的方式解决冲突。类似于hashmap。因为索引的结构是十分紧凑的，所以hash索引的查询很快。
 
-![img](E:\GitHub\Database-Notes\docs\pics\20180902103803602.png)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/20180902103803602.png?raw=true" /></div><br>
 
 索引过程：
 
@@ -338,7 +340,7 @@ InnoDB 存储引擎在 MySQL 5.6.4 版本中也开始支持全文索引。
 
 **倒排索引**是实现“**单词-文档矩阵**”的一种具体存储形式，通过倒排索引，可以根据单词快速获取包含这个单词的文档列表。倒排索引主要由两个部分组成：“单词词典”和“倒排文件”。
 
-![img](E:\GitHub\Database-Notes\docs\pics\524341-20160410174915968-1895730713.jpg)
+<div align="center"><img src="https://github.com/dreamwhigh/Database-Notes/blob/master/docs/pics/524341-20160410174915968-1895730713.jpg?raw=true" /></div><br>
 
 #### 空间数据索引
 
